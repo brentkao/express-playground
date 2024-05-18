@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model Account {
+  uid          String    @id @unique(map: "uid_UNIQUE") @db.Char(26)
+  email        String    @unique(map: "email_UNIQUE") @db.VarChar(45)
+  salt         String    @db.VarChar(255)
+  hash         String    @db.VarChar(255)
+  first_name   String?   @db.VarChar(45)
+  last_name    String?   @db.VarChar(45)
+  country      String?   @db.VarChar(45)
+  country_code String?   @db.VarChar(5)
+  phone_number String?   @db.VarChar(20)
+  birth_date   DateTime? @db.Date
+  create_at    DateTime? @default(now()) @db.DateTime(0)
+  update_at    DateTime? @default(now()) @db.DateTime(0)
+
+  @@map("account")
+}
