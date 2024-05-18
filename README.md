@@ -3,7 +3,7 @@
   <br>
   <a href="http://www.amitmerchant.com/electron-markdownify"><img src="https://www.parazeni.app/LOGO.png" alt="Markdownify" width="200"></a>
   <br>
-  Express Template
+  Express Playground
   <br>
 </h1>
 
@@ -25,10 +25,10 @@ To clone and run this application, you'll need [Git](https://git-scm.com) and [N
 
 ```bash
 # Clone this repository
-$ git clone https://github.com/brentkao/express-template.git
+$ git clone https://github.com/brentkao/express-playground.git
 
 # Go into the repository
-$ cd express-template
+$ cd express-playground
 
 # Install dependencies
 $ npm install
