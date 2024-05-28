@@ -15,4 +15,11 @@ node_modules/
 
 .DS_Store
 
+# Environment variables
 .env
+
+# Dist folder
+dist/
+
+# Uploaded files
+uploads/

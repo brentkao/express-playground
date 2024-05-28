@@ -3,8 +3,10 @@ import swagger from "../swagger";
 import * as user from "../controller/user";
 import * as auth from "../controller/auth";
 import * as error from "../controller/error";
+import * as cloudflare from "../controller/cloudflare";
 import { expressjwt as expressJwt, Request as JWTRequest } from "express-jwt";
 import { userJWT, roleCheck } from "../middlewares/jwt";
+import { upload } from "../middlewares/multer";
 
 export default function (app: Express) {
   const router = express.Router();
@@ -26,6 +28,12 @@ export default function (app: Express) {
   //以下驗證 身份
   userRouter.use(expressJwt(userJWT), roleCheck("developer"));
   userRouter.get("/do-something", user.doSomething);
+
+  //➫ CloudFlare R2
+  const r2Router = express.Router();
+  router.use("/cloudR2", r2Router);
+  r2Router.post("/upload", upload.single("image"), cloudflare.uploadImage);
+  r2Router.get("/getObjects", cloudflare.getObjects);
 
   app.use("/api", router);
   swagger(app);
