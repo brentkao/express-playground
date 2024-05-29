@@ -34,6 +34,7 @@ export default function (app: Express) {
   router.use("/cloudR2", r2Router);
   r2Router.post("/upload", upload.single("image"), cloudflare.uploadImage);
   r2Router.get("/getObjects", cloudflare.getObjects);
+  r2Router.get("/getBuckets", cloudflare.getBuckets);
 
   app.use("/api", router);
   swagger(app);

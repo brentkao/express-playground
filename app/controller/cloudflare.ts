@@ -6,7 +6,7 @@ import { env } from "../../env";
 import {
   S3Client,
   ListBucketsCommand,
-  PutObjectCommand,
+  PutObjectCommand, // 這裡是用來上傳檔案的(!不推上傳大檔案，如果上傳過程中斷，必須重新上傳整個文件，沒有斷點續傳功能)
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
@@ -28,7 +28,6 @@ const s3 = new S3Client({
  *  name: CloudFlare R2
  *  description: '照片 API'
  */
-
 
 /**
  * @swagger
@@ -101,15 +100,48 @@ export async function uploadImage(req: Request, res: Response) {
 
 /**
  * @swagger
+ * /api/cloudR2/getBuckets:
+ *   get:
+ *     tags:
+ *        - CloudFlare R2
+ *     summary: buckets list.
+ *     description: buckets list.
+ *     responses:
+ *       200:
+ *         description: Successful buckets list.
+ *       500:
+ *         description: Error response with error message.
+ */
+export async function getBuckets(req: Request, res: Response) {
+  try {
+    const command = new ListBucketsCommand({});
+    const result = await s3.send(command);
+    console.log("getBuckets ListBucketsCommand ", result);
+
+    //! 不推薦直接回傳所有 bucket name，將會暴露自己的 bucket name
+    const resData = result.Buckets?.map((bucket) => bucket.Name);
+
+    return res.status(200).json({ data: resData });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Failed to list buckets",
+      error: (error as Error).message,
+    });
+  }
+}
+
+/**
+ * @swagger
  * /api/cloudR2/getObjects:
  *   get:
  *     tags:
  *        - CloudFlare R2
- *     summary: public image list.
- *     description: public image list.
+ *     summary: objects list.
+ *     description: objects list.
  *     responses:
  *       200:
- *         description: Successful public image list.
+ *         description: Successful objects list.
  *       500:
  *         description: Error response with error message.
  */
@@ -134,7 +166,7 @@ export async function getObjects(req: Request, res: Response) {
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      message: "Failed to list buckets",
+      message: "Failed to list objects",
       error: (error as Error).message,
     });
   }
