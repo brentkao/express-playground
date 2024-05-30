@@ -5,7 +5,8 @@
   "main": "app.ts",
   "scripts": {
     "dev": "ts-node app.ts",
-    "start": "npm run dev"
+    "start": "node dist/app.js",
+    "build": "npx tsc"
   },
   "author": "Brent Kao",
   "license": "ISC",
