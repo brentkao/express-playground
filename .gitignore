@@ -23,3 +23,6 @@ dist/
 
 # Uploaded files
 uploads/
+
+# Personal Test Files
+test/personal/
