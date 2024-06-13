@@ -1,23 +1,25 @@
 console.log("Hello World!");
 import express, { Express, Application } from "express";
-import "express-async-errors"; 
+import "express-async-errors";
 import cors from "cors";
-import { rateLimit } from 'express-rate-limit'
+import { rateLimit } from "express-rate-limit";
 import routes from "./app/routes";
 import { env } from "./env";
 import { errorHandler } from "./app/middlewares/errors";
+import c_Server from "./app/constants/server";
+import wsRoutes from "./app/routes/ws";
 
 const app: Express = express();
 const port: number = env.PORT;
 
 const limiter = rateLimit({
-	windowMs: 15 * 60 * 1000, // 15 minutes
-	limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
-	standardHeaders: 'draft-7', // draft-6: `RateLimit-*` headers; draft-7: combined `RateLimit` header
-	legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
-	// store: ... , // Redis, Memcached, etc. See below.
-  skip: (req, res) => ["/"].includes(req.url) // Bypass the rate limit for some requests
-})
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
+  standardHeaders: "draft-7", // draft-6: `RateLimit-*` headers; draft-7: combined `RateLimit` header
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
+  // store: ... , // Redis, Memcached, etc. See below.
+  skip: (req, res) => ["/"].includes(req.url), // Bypass the rate limit for some requests
+});
 app.use(limiter);
 app.use(cors());
 app.use(express.json());
@@ -35,6 +37,10 @@ app.use(errorHandler);
 
 async function main() {
   console.log("Starting server...");
+  //# 啟用 websocket 服務
+  if (c_Server.WEBSOCKET_SERVICE_ACTIVE) {
+    wsRoutes(app);
+  }
 }
 
 main()
