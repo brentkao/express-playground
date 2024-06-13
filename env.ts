@@ -2,6 +2,7 @@ require("dotenv").config();
 import { z } from "zod";
 
 const environmentSchema = z.object({
+  NODE_ENV: z.string().default("development"),
   PORT: z.preprocess((val) => {
     const valueAsString = String(val);
     const parsed = parseInt(valueAsString, 10);
@@ -11,15 +12,16 @@ const environmentSchema = z.object({
   DATABASE_URL: z.string(),
 });
 
-const { PORT, JWT_SECRET, DATABASE_URL } = process.env;
+const { NODE_ENV, PORT, JWT_SECRET, DATABASE_URL } = process.env;
 
 const environment = environmentSchema.safeParse({
+  NODE_ENV,
   PORT,
   JWT_SECRET,
   DATABASE_URL,
 });
 
-if(process.env.NODE_ENV !== "production") console.log(environment);
+if (process.env.NODE_ENV !== "production") console.log(environment);
 
 if (!environment.success) {
   console.log("Environment validation failed: ");
