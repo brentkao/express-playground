@@ -6,8 +6,10 @@ export type UserRole = "developer" | "api" | "user";
 
 // 定義JwtPayload接口
 export interface JwtPayload {
-  userId: string; // 用戶的唯一標識
-  role: UserRole; // 用戶的角色
+  /** 用戶的唯一標識 */
+  userId: string;
+  /** 用戶的角色 */
+  role: UserRole;
   // 根據需要可以添加更多的屬性
 }
 
