@@ -1,4 +1,5 @@
-console.log("Hello World!");
+import { logger } from "./app/util/logger";
+logger("app", { msg: "Hello World!", retainLogs: false });
 import express, { Express, Application } from "express";
 import "express-async-errors";
 import cors from "cors";
@@ -36,18 +37,24 @@ routes(app);
 app.use(errorHandler);
 
 async function main() {
-  console.log("Starting server...");
+  logger("app", { msg: "Starting server...", retainLogs: true });
+  
   //# 啟用 websocket 服務
   if (c_Server.WEBSOCKET_SERVICE_ACTIVE) {
     wsRoutes(app);
   }
+
 }
 
 main()
   .then(() => {
     //# 啟動伺服器監聽
     return app.listen(port, () =>
-      console.log(`Listening on port http://localhost:${port}`)
+      logger("app", {
+        msg: `Listening on port http://localhost:${port}`,
+        retainLogs: true,
+        pointer: true,
+      })
     );
   })
   .catch((err) => {
