@@ -1,9 +1,8 @@
 import { env } from "../../env";
-type LoggerDepth = { depth: number } | null | undefined;
 
 interface LoggerOptions {
   data?: any;
-  depth?: LoggerDepth;
+  depth?: number | null | undefined;
   retainLogs?: boolean;
   msg?: string;
   pointer?: boolean;
@@ -15,7 +14,7 @@ export function logger(
   tag: string,
   {
     data,
-    depth = null,
+    depth = 2,
     retainLogs = false,
     msg = "",
     pointer = false,
@@ -25,4 +24,19 @@ export function logger(
   const fullTag = pointer ? `➫ [${tag}]` : `[${tag}]`;
   console.log(fullTag, msg);
   if (data) console.dir(data, { depth });
+}
+
+export function loggerTable(
+  tag: string,
+  {
+    data,
+    retainLogs = false,
+    msg = "",
+    pointer = false,
+  }: LoggerOptions = {}
+) {
+  if (!retainLogs && isProduction) return;
+  const fullTag = pointer ? `➫ [${tag}]` : `[${tag}]`;
+  console.log(fullTag, msg);
+  if (data) console.table(data);
 }
