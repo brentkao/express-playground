@@ -7,6 +7,12 @@ interface LoggerOptions {
   msg?: string;
   pointer?: boolean;
 }
+interface LoggerTableOptions {
+  data?: any;
+  retainLogs?: boolean;
+  msg?: string;
+  pointer?: boolean;
+}
 
 const isProduction = env.NODE_ENV === "production";
 
@@ -33,7 +39,7 @@ export function loggerTable(
     retainLogs = false,
     msg = "",
     pointer = false,
-  }: LoggerOptions = {}
+  }: LoggerTableOptions = {}
 ) {
   if (!retainLogs && isProduction) return;
   const fullTag = pointer ? `➫ [${tag}]` : `[${tag}]`;
