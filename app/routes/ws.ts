@@ -1,5 +1,4 @@
 import express, { Express, Request } from "express";
-import { WebSocket } from "ws";
 import expressWs from "express-ws";
 import swagger from "../swagger";
 import { expressjwt as expressJwt, Request as JWTRequest } from "express-jwt";
