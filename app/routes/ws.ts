@@ -5,12 +5,14 @@ import { expressjwt as expressJwt, Request as JWTRequest } from "express-jwt";
 import { wsJWT, roleCheck } from "../middlewares/jwt";
 import c_Server from "../constants/server";
 import { wsGameConnection, normalConnection } from "../controller/websocket";
+import { validateGameToken } from "../middlewares/ws-game";
 
 export default function (app: Express) {
   //➫ 初始化 express-ws 並套用至 app
   expressWs(app);
   const router = express.Router();
   router.use(expressJwt(wsJWT).unless({ path: ["/"] }));
+  router.use(validateGameToken);
 
   //# 無需驗證身份的 WebSocket 服務
   //➫ get ws

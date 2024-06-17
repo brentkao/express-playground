@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Blok Game</title>
+    <style>
+        #board {
+            display: grid;
+            grid-template-columns: repeat(20, 20px);
+            gap: 1px;
+        }
+
+        .cell {
+            width: 20px;
+            height: 20px;
+            border: 1px solid black;
+        }
+
+        .errorText {
+            color: red;
+        }
+
+        .player-1 {
+            background-color: red;
+        }
+
+        .player-2 {
+            background-color: blue;
+        }
+
+        .player-3 {
+            background-color: green;
+        }
+
+        .player-4 {
+            background-color: yellow;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Blokus Game</h1>
+    <div id="game">
+        <h6 class="errorText">error: <span class="errorText" id="ErrorId"></span></h6>
+        <h2>Notify: <span id="NotifyId"></span></h2>
+
+        <div id="login">
+            <input id="email" type="text" placeholder="email">
+            <input id="password" type="text" placeholder="Your Password">
+            <h2>Game Token: <span id="gameToken"></span></h2>
+            <button onclick="login()">Login</button>
+            <button onclick="getGameToken()">Get Token</button>
+            <button onclick="gameConnect()">Game connect</button>
+        </div>
+        <div id="join">
+            <input id="roomId" type="text" placeholder="Room ID">
+            <input id="playerName" type="text" placeholder="Your Name">
+            <button onclick="createRoom()">Create Room</button>
+            <button onclick="joinRoom()">Join Room</button>
+            <button onclick="joinRandomRoom()">Join Random Room</button>
+            <button onclick="getPublicRooms()">Get Public Rooms</button>
+        </div>
+        <div id="gameBoard" style="display:none;">
+            <h2>Room Id: <span id="nowRoomId"></span></h2>
+            <h2>Host: <span id="host"></span></h2>
+            <h2>Current Player: <span id="currentPlayer"></span></h2>
+            <h2>Players: <span id="players"></span></h2>
+            <h2>Game Status: <span id="gameStatus"></span></h2>
+            <div id="board"></div>
+            <button onclick="startGame()">Start Game</button>
+            <button onclick="makeRandomMove()">Make Random Move</button>
+            <button onclick="leaveRoom()">Leave Room</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+    <script>
+        let jwt = "";
+        let token = "";
+        const login = async () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            const response = await fetch('/api/auth/user/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "email": email,
+                    "password": password
+                }),
+                redirect: "follow"
+            });
+            const data = await response.json();
+            console.log('Login:', data);
+            jwt = data.token; // 設定 jwt
+            if (data.errors) {
+                document.getElementById('ErrorId').textContent = JSON.stringify(data.errors[0]);
+            }else{
+                document.getElementById('NotifyId').textContent = "登入成功";
+            }
+            return data
+        }
+        async function getGameToken() {
+            console.log("getGameToken", jwt);
+            const response = await fetch("/api/user/gameAccessToken", {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${jwt}`
+                },
+            })
+            const data = await response.json();
+            console.log('getGameToken:', data);
+            token = data.data;
+            document.getElementById('gameToken').textContent = data.data;
+            return data
+        }
+        let socketConn;
+        async function gameConnect() {
+            console.log("gameConnect", token);
+            const socket = new WebSocket(`ws://${location.hostname}${location.port?`:${location.port}`:""}/ws-path/game?token=${token}`);
+
+            let playerName = '';
+            let roomId = '';
+
+            socket.onopen = function (event) {
+                socketConn = socket;
+                console.log('WebSocket is open now.');
+            };
+
+            socket.onmessage = function (event) {
+                const res = JSON.parse(event.data);
+                const { type, data } = res;
+                console.log('Message from server:', data);
+                switch (type) {
+                    case 'notification':
+                        console.log('Notification:', data.msg);
+                        document.getElementById('NotifyId').textContent = data.msg;
+                        break;
+                    case 'room-detail':
+                        roomId = data.detail.roomId;
+                        document.getElementById('join').style.display = 'none';
+                        document.getElementById('gameBoard').style.display = 'block';
+                        document.getElementById('nowRoomId').textContent = data.detail.roomId;
+                        document.getElementById('host').textContent = data.detail.host;
+                        document.getElementById('currentPlayer').textContent = data.detail.currentPlayer || "Waiting to start...";
+                        document.getElementById('players').textContent = data.detail.players.join(', ');
+                        document.getElementById('gameStatus').textContent = data.detail.gameStatus ? "In Progress" : "Not Started";
+                        drawBoard(data.detail);
+                        break;
+                    case 'next-player':
+                        document.getElementById('currentPlayer').textContent = data.msg;
+                        break;
+                    case 'game-over':
+                        alert(`Game Over: ${data.msg}`);
+                        break;
+                    case 'create-room':
+                        roomId = data.detail.roomId;
+                        document.getElementById('join').style.display = 'none';
+                        document.getElementById('gameBoard').style.display = 'block';
+                        document.getElementById('nowRoomId').textContent = data.detail.roomId;
+                        document.getElementById('host').textContent = data.detail.host;
+                        document.getElementById('currentPlayer').textContent = data.detail.currentPlayer || "Waiting to start...";
+                        document.getElementById('players').textContent = data.detail.players.join(', ');
+                        document.getElementById('gameStatus').textContent = data.detail.gameStatus ? "In Progress" : "Not Started";
+                        break;
+                    case 'error':
+                        document.getElementById('ErrorId').textContent = data.msg;
+                        break;
+                    default:
+                        console.error('Unknown message type:', type);
+                        document.getElementById('ErrorId').textContent = data.msg;
+
+                }
+            };
+
+            // 當 WebSocket 連接關閉時觸發
+            socket.onclose = function (event) {
+                console.log("WebSocket is closed now.");
+                console.log("Close code:", event.code);
+                console.log("Close reason:", event.reason);
+
+                // 可以根據關閉代碼和原因進行相應處理
+                if (event.code === 4001) {
+                    document.getElementById('ErrorId').textContent = "Token not provided";
+                } else if (event.code === 4002) {
+                    document.getElementById('ErrorId').textContent = "Invalid token";
+                } else if (event.code === 4003) {
+                    document.getElementById('ErrorId').textContent = "Token has expired";
+                } else if (event.code === 4004) {
+                    document.getElementById('ErrorId').textContent = "Token not active yet";
+                } else {
+                    document.getElementById('ErrorId').textContent = "Unknown error: " + event.reason;
+                }
+            };
+
+            socket.onerror = function (error) {
+                console.error('WebSocket error:', error);
+            };
+
+            return socket;
+        }
+
+
+        function sendMessage(type, data) {
+            socketConn.send(JSON.stringify({ type, data }));
+        }
+
+        function createRoom() {
+            playerName = document.getElementById('playerName').value;
+            sendMessage('create-room', {
+                isPublic: true,
+                detail: {
+                    size: 2
+                }
+            });
+        }
+
+        function joinRoom() {
+            roomId = document.getElementById('roomId').value;
+            console.log('Joining room:', roomId);
+            sendMessage('join-room', {
+                roomId: roomId,
+                isPublic: true
+            });
+        }
+
+        function joinRandomRoom() {
+            sendMessage('join-random-room', {});
+        }
+
+        function getPublicRooms() {
+            sendMessage('public-room-list', {});
+        }
+
+        function startGame() {
+            sendMessage('start-game', {});
+        }
+
+        function leaveRoom() {
+            sendMessage('leave-room', {});
+            document.getElementById('join').style.display = 'block';
+            document.getElementById('gameBoard').style.display = 'none';
+        }
+
+        function makeRandomMove() {
+            const x = Math.floor(Math.random() * 20);
+            const y = Math.floor(Math.random() * 20);
+            sendMessage('game-make-move', { x, y });
+        }
+
+        function drawBoard(room) {
+            const { board = [], players } = room;
+            const boardElement = document.getElementById('board');
+            boardElement.innerHTML = '';
+            board.forEach((row, rowIndex) => {
+                row.forEach((cell, cellIndex) => {
+                    const cellElement = document.createElement('div');
+                    const playerIndex = players.includes(cell) ? players.indexOf(cell) + 1 : 0;
+                    cellElement.className = 'cell';
+                    if (cell !== null) {
+                        console.log('Cell:', cell);
+                        console.log('Player Index:', playerIndex);
+                        cellElement.classList.add(`player-${playerIndex}`);
+                    }
+                    boardElement.appendChild(cellElement);
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>

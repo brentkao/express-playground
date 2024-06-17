@@ -9,6 +9,7 @@ import { env } from "./env";
 import { errorHandler } from "./app/middlewares/errors";
 import c_Server from "./app/constants/server";
 import wsRoutes from "./app/routes/ws";
+import path from "path";
 
 const app: Express = express();
 const port: number = env.PORT;
@@ -28,6 +29,10 @@ app.use(express.urlencoded({ extended: false }));
 
 app.get("/", (req, res) => {
   res.send("Hello World!");
+});
+
+app.get("/game", (req, res) => {
+  res.sendFile(path.join(__dirname, "./gameBoard.html"));
 });
 
 //➫ 設置路由

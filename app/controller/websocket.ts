@@ -478,7 +478,7 @@ export function wsGameConnection(ws: WebSocket, req: JWTRequest) {
           // Make the move
           gmmRoom.board[gmmRequestDetail.x][gmmRequestDetail.y] = userId;
           //TODO: Check if the game is over
-          if (Math.random() > 0.5) {
+          if (Math.random()*100 < 5) {
             // Randomly end the game
             gmmRoom.gameStatus = false; // End the game
             gmmRoom.currentPlayer = ""; // Reset current player

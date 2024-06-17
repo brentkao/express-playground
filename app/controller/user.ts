@@ -1,11 +1,16 @@
 import { Request, Response } from "express";
+import { Request as JWTRequest } from "express-jwt";
 import { prisma } from "../prisma";
 import { z } from "zod";
 import { ulid } from "ulid";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 import BadRequestError from "../errors/bad-request-error";
 import { formatZodValidationErrors } from "../util/zod";
+import { gameTempTokenList } from "../data";
+import { JwtPayload } from "../util/jwt";
+import { loggerTable } from "../util/logger";
 
 /**
  * @swagger
@@ -118,6 +123,41 @@ export async function register(req: Request, res: Response) {
   };
 
   return res.status(200).json({ message: "Registered", data: resData });
+}
+
+/**
+ * @swagger
+ * /api/user/gameAccessToken:
+ *   get:
+ *     tags:
+ *       - user
+ *     summary: To get Game's ws connect access token.
+ *     description: For websocket connection.
+ *     responses:
+ *       200:
+ *         description: done.
+ *       400:
+ *         description: Invalid request data.
+ */
+export async function getGameAccessToken(req: JWTRequest, res: Response) {
+  if (req?.auth === undefined)
+    throw new BadRequestError({
+      code: 401,
+      message: "Access denied",
+    });
+  const auth = req.auth as JwtPayload;
+
+  // Set Random Token for Game websocket connection (ED5)
+  const token = crypto.randomBytes(16).toString("hex");
+  console.log("驗證 資料", token, auth);
+  
+  gameTempTokenList.set(token, auth);
+  // Remove token after 1 minutes
+  setTimeout(() => {
+    gameTempTokenList.delete(token);
+  }, 1000 * 60 * 1);
+  loggerTable("user", { msg: "getGameAccessToken", data: gameTempTokenList });
+  return res.status(200).json({ message: "done", data: token });
 }
 
 export async function doSomething(req: Request, res: Response) {

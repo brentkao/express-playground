@@ -5,6 +5,7 @@ import * as auth from "../controller/auth";
 import * as error from "../controller/error";
 import { expressjwt as expressJwt, Request as JWTRequest } from "express-jwt";
 import { userJWT, roleCheck } from "../middlewares/jwt";
+import path from "path";
 
 export default function (app: Express) {
   const router = express.Router();
@@ -24,8 +25,9 @@ export default function (app: Express) {
   router.use("/user", userRouter);
   userRouter.post("/register", user.register);
   //以下驗證 身份
-  userRouter.use(expressJwt(userJWT), roleCheck("developer"));
+  userRouter.use(expressJwt(userJWT), roleCheck("user"));
   userRouter.get("/do-something", user.doSomething);
+  userRouter.get("/gameAccessToken", user.getGameAccessToken);
 
   app.use("/api", router);
   swagger(app);
