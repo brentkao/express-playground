@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "ts-node app.ts",
     "start": "node dist/app.js",
-    "build": "npx tsc"
+    "build": "npx tsc && npm run copy-html",
+    "copy-html": "copyfiles -u 1 src/**/*.html dist"
   },
   "author": "Brent Kao",
   "license": "ISC",
@@ -36,6 +37,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/express-ws": "^3.0.4",
     "@types/swagger-jsdoc": "^6.0.4",
-    "@types/swagger-ui-express": "^4.1.6"
+    "@types/swagger-ui-express": "^4.1.6",
+    "copyfiles": "^2.4.1"
   }
 }
