@@ -15,14 +15,17 @@ export default function (app: Express) {
   app.use(
     cors({
       origin: (origin, callback) => {
-        if (
-          !origin ||
-          allowedOrigins.some((allowedOrigin) =>
-            origin.startsWith(allowedOrigin)
-          )
+        if (!origin) {
+          // 如果 origin 為 null 或 undefined（例如直接在瀏覽器中輸入 URL），允許請求通過
+          callback(null, true);
+        } else if (
+          allowedOrigins.includes(origin) ||
+          /\.parazeni\.app$/.test(origin)
         ) {
+          // 如果 origin 包含在 allowedOrigins 中或符合正則表達式，允許請求通過
           callback(null, true);
         } else {
+          // 否則，不允許請求通過
           callback(new Error("Not allowed by CORS"));
         }
       },
