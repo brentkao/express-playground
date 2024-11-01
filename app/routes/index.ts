@@ -6,7 +6,7 @@ import * as error from "../controller/error";
 import * as cloudflare from "../controller/cloudflare";
 import { expressjwt as expressJwt, Request as JWTRequest } from "express-jwt";
 import { userJWT, roleCheck } from "../middlewares/jwt";
-import { upload } from "../middlewares/multer";
+import { upload, uploadPdf } from "../middlewares/multer";
 
 export default function (app: Express) {
   const router = express.Router();
@@ -33,6 +33,7 @@ export default function (app: Express) {
   const r2Router = express.Router();
   router.use("/cloudR2", r2Router);
   r2Router.post("/upload", upload.single("image"), cloudflare.uploadImage);
+  r2Router.post("/upload/pdf", uploadPdf.single("pdf"), cloudflare.uploadPDF);
   r2Router.get("/getObjects", cloudflare.getObjects);
   r2Router.get("/getBuckets", cloudflare.getBuckets);
 

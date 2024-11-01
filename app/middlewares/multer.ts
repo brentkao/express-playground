@@ -1,6 +1,8 @@
-import multer from "multer";
+import multer, { FileFilterCallback } from "multer";
 import fs from "fs";
 import path from "path";
+import { Request } from "express";
+import BadRequestError from "../errors/bad-request-error";
 
 // Create uploads directory if it doesn't exist
 if (!fs.existsSync("uploads")) {
@@ -23,3 +25,23 @@ const storage = multer.diskStorage({
   },
 });
 export const upload = multer({ storage: storage });
+
+// 文件格式過濾器，僅允許 PDF
+const pdfFileFilter = (
+  req: Request,
+  file: Express.Multer.File,
+  cb: FileFilterCallback
+) => {
+  if (file.mimetype === "application/pdf") {
+    cb(null, true); // 接受文件
+  } else {
+    cb(
+      new BadRequestError({ code: 400, message: "Only PDF files are allowed!" })
+    ); // 拒絕非 PDF 文件
+  }
+};
+
+export const uploadPdf = multer({
+  storage: storage,
+  fileFilter: pdfFileFilter,
+});

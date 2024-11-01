@@ -11,6 +11,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import path from "path";
+import { z } from "zod";
 
 // Configure AWS S3
 const s3 = new S3Client({
@@ -138,7 +139,18 @@ export async function getBuckets(req: Request, res: Response) {
  *     tags:
  *        - CloudFlare R2
  *     summary: objects list.
- *     description: objects list.
+ *     description: Get a list of objects filtered by file type.
+ *     parameters:
+ *       - in: query
+ *         name: fileType
+ *         required: false
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *             enum: ["png", "jpg", "pdf", "notExist"]
+ *           example: ["png", "jpg"]
+ *         description: Filter objects by file type.
  *     responses:
  *       200:
  *         description: Successful objects list.
@@ -146,6 +158,16 @@ export async function getBuckets(req: Request, res: Response) {
  *         description: Error response with error message.
  */
 export async function getObjects(req: Request, res: Response) {
+  // 使用 Zod 驗證並設置預設值
+  const fileTypeSchema = z
+    .enum(["png", "jpg", "pdf"])
+    .array()
+    .default(["png", "jpg", "pdf"]);
+
+  const fileType = fileTypeSchema.parse(
+    req.query.fileType ? [req.query.fileType].flat() : undefined
+  ) as string[];
+
   try {
     const command = new ListObjectsV2Command({
       Bucket: env.CLOUDFLARE_R2_BUCKET_NAME,
@@ -155,7 +177,7 @@ export async function getObjects(req: Request, res: Response) {
     // 篩選只包含 .png 和 .jpg 文件
     const filteredContents = result.Contents?.filter((object) => {
       const ext = path.extname(object.Key || "").toLowerCase();
-      return ext === ".png" || ext === ".jpg";
+      return fileType.includes(ext.slice(1));
     });
 
     const resData = filteredContents?.map(
@@ -169,5 +191,76 @@ export async function getObjects(req: Request, res: Response) {
       message: "Failed to list objects",
       error: (error as Error).message,
     });
+  }
+}
+
+/**
+ * @swagger
+ * /api/cloudR2/upload/pdf:
+ *   post:
+ *     tags:
+ *        - CloudFlare R2
+ *     summary: Upload PDF
+ *     description: Upload PDF.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               pdf:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Successful upload.
+ *       400:
+ *         description: Only PDF files are allowed!.
+ *       500:
+ *         description: Error response with error message.
+ */
+export async function uploadPDF(req: Request, res: Response) {
+  //step validate request
+  console.log("req.file", req.file);
+  const file = req.file;
+  if (!file) throw new BadRequestError({ message: "No file uploaded" });
+
+  //step upload image to cloudflare
+  const filePath = file.path;
+  const fileStream = fs.createReadStream(filePath);
+  try {
+    // Upload the image to S3
+    const parallelUploads3 = new Upload({
+      client: s3,
+      params: {
+        Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME as string,
+        Key: file.filename,
+        Body: fileStream,
+        ContentType: file.mimetype,
+        ACL: "public-read", // or any other appropriate ACL
+      },
+    });
+
+    parallelUploads3.on("httpUploadProgress", (progress) => {
+      console.log("R2 parallelUploads3 httpUploadProgress", progress);
+    });
+
+    const uploadResult = await parallelUploads3.done();
+    console.log("R2 uploadResult", uploadResult);
+
+    const url = `${env.CLOUDFLARE_R2_CUSTOM_DOMAINS}/${file.filename}`;
+
+    return res
+      .status(200)
+      .json({ message: "File uploaded successfully", data: url });
+  } catch (error) {
+    console.error(error);
+    throw new BadRequestError({ message: "File upload failed" });
+  } finally {
+    // Clean up the uploaded file
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
   }
 }
