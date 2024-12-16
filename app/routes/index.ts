@@ -4,6 +4,7 @@ import * as user from "../controller/user";
 import * as auth from "../controller/auth";
 import * as error from "../controller/error";
 import * as cloudflare from "../controller/cloudflare";
+import * as sendEmail from "../controller/sendEmail";
 import { expressjwt as expressJwt, Request as JWTRequest } from "express-jwt";
 import { userJWT, roleCheck } from "../middlewares/jwt";
 import { upload, uploadPdf } from "../middlewares/multer";
@@ -36,6 +37,12 @@ export default function (app: Express) {
   r2Router.post("/upload/pdf", uploadPdf.single("pdf"), cloudflare.uploadPDF);
   r2Router.get("/getObjects", cloudflare.getObjects);
   r2Router.get("/getBuckets", cloudflare.getBuckets);
+  
+  //➫ SendEmail With R2
+  const sendEmailRouter = express.Router();
+  router.use("/sendEmail", sendEmailRouter);
+  sendEmailRouter.post("/upload/pdfSendEmail", uploadPdf.single("pdf"), sendEmail.uploadPDFAndSendEmail);
+  sendEmailRouter.post("/", sendEmail.sendEmail);
 
   app.use("/api", router);
   swagger(app);

@@ -17,6 +17,15 @@ const environmentSchema = z.object({
   CLOUDFLARE_R2_BUCKET_NAME: z.string(),
   CLOUDFLARE_API_TOKEN: z.string(),
   CLOUDFLARE_R2_CUSTOM_DOMAINS: z.string(),
+  //# MailGun
+  MAILGUN_API_KEY: z.string(),
+  MAILGUN_KEY_SECRET: z.string(),
+  MAILGUN_HOST: z.string(),
+  MAILGUN_PORT: z.preprocess((val) => Number(val), z.number()),
+  MAILGUN_USER: z.string(),
+  MAILGUN_PASSWORD: z.string(),
+  //# Target
+  TARGET_EMAIL: z.string(),
 });
 
 const {
@@ -30,6 +39,13 @@ const {
   CLOUDFLARE_R2_BUCKET_NAME,
   CLOUDFLARE_API_TOKEN,
   CLOUDFLARE_R2_CUSTOM_DOMAINS,
+  MAILGUN_API_KEY,
+  MAILGUN_KEY_SECRET,
+  MAILGUN_HOST,
+  MAILGUN_PORT,
+  MAILGUN_USER,
+  MAILGUN_PASSWORD,
+  TARGET_EMAIL,
 } = process.env;
 
 const environment = environmentSchema.safeParse({
@@ -43,6 +59,13 @@ const environment = environmentSchema.safeParse({
   CLOUDFLARE_R2_BUCKET_NAME,
   CLOUDFLARE_API_TOKEN,
   CLOUDFLARE_R2_CUSTOM_DOMAINS,
+  MAILGUN_API_KEY,
+  MAILGUN_KEY_SECRET,
+  MAILGUN_HOST,
+  MAILGUN_PORT,
+  MAILGUN_USER,
+  MAILGUN_PASSWORD,
+  TARGET_EMAIL,
 });
 
 if (process.env.NODE_ENV !== "production") console.log(environment);

@@ -7,9 +7,12 @@ import { rateLimit } from 'express-rate-limit'
 import routes from "./app/routes";
 import { env } from "./env";
 import { errorHandler } from "./app/middlewares/errors";
+import { join } from "path";
 
 const app: Express = express();
 const port: number = env.PORT;
+// 啟用 trust proxy
+app.set("trust proxy", true);
 
 const limiter = rateLimit({
 	windowMs: 15 * 60 * 1000, // 15 minutes
@@ -23,10 +26,17 @@ app.use(limiter);
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(express.static("public")); // 假設你的靜態文件在 public 目錄
 
 app.get("/", (req, res) => {
   res.send("Hello World!");
 });
+
+// 取得頁面
+app.get("/sendEmail", (req, res) => {
+  res.sendFile(join(__dirname, "public/sendEmail.html"));
+});
+
 
 //➫ 設置路由
 routes(app);
